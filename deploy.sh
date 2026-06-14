@@ -1,0 +1,1 @@
+npm run build:example && rm -rf /usr/share/nginx/html/gif-tools && mv dist-example /usr/share/nginx/html/gif-tools

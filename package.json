@@ -1,0 +1,58 @@
+{
+  "name": "@libshub/gif-tools",
+  "version": "1.0.7",
+  "description": "",
+  "module": "./dist/gif-tools.es.js",
+  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/gif-tools.es.js",
+      "default": "./dist/gif-tools.es.js"
+    },
+    "./style.css": "./dist/gif-tools.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc -p tsconfig.lib.json",
+    "build:example": "vite build --config vite.example.config.ts",
+    "preview:example": "vite preview --config vite.example.config.ts",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "peerDependencies": {
+    "react": ">=17",
+    "react-dom": ">=17"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.12.3",
+    "@types/react": "^17.0.93",
+    "@types/react-dom": "^17.0.26",
+    "@vitejs/plugin-react": "^6.0.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12"
+  },
+  "dependencies": {
+    "gifuct-js": "^2.1.2"
+  }
+}
