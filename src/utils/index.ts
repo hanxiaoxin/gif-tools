@@ -1,3 +1,4 @@
 export { createGifController } from './gifController'
-export { acquireGifResource, clearGifResourceCache, releaseGifResource } from './gifResourceManager'
+export { clearGifResourceCache } from './gifResourceManager'
+export { setWorkerPoolSize } from './gifWorkerPool'
 export type { CreateGifOptions, GifController, GifLoadStats } from './types'

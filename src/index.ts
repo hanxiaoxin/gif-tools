@@ -5,5 +5,9 @@ export type {
   GifPlayerRef,
 } from './components/GifPlayer'
 
-export { createGifController, clearGifResourceCache } from './utils'
+export {
+  clearGifResourceCache,
+  createGifController,
+  setWorkerPoolSize,
+} from './utils'
 export type { CreateGifOptions, GifController, GifLoadStats } from './utils'

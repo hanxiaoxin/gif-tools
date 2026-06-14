@@ -4,7 +4,6 @@ import {
   formatGifLoadStatsCompact,
   formatLoadTimeMs,
   getDebugDensity,
-  getGifLoadStatsLineLabel,
   getGifLoadStatsView,
   type GifLoadStatsLine,
   type GifLoadStatsView,
@@ -56,6 +55,8 @@ function FullDebugPanel({
   expanded: boolean
   onToggle?: () => void
 }) {
+  const modeLabel = view.mode.toUpperCase()
+
   return (
     <div
       className={[
@@ -69,7 +70,9 @@ function FullDebugPanel({
       data-mode={view.mode}
       style={{
         maxWidth:
-          !expanded && width > 0 ? Math.min(152, Math.round(width * 0.52)) : undefined,
+          onToggle && !expanded && width > 0
+            ? Math.min(152, Math.round(width * 0.52))
+            : undefined,
       }}
       role={onToggle ? 'button' : undefined}
       tabIndex={onToggle ? 0 : undefined}
@@ -86,14 +89,10 @@ function FullDebugPanel({
           : undefined
       }
     >
-      <span className="gif-player__debug-badge">{MODE_LABEL[view.mode]}</span>
+      <span className="gif-player__debug-badge">{modeLabel}</span>
       <div className="gif-player__debug-body">
         {view.lines.map((line) => (
-          <DebugRow
-            key={line.label}
-            label={getGifLoadStatsLineLabel(line, view.mode)}
-            valueMs={line.valueMs}
-          />
+          <DebugRow key={line.label} label={line.label} valueMs={line.valueMs} />
         ))}
       </div>
       <div className="gif-player__debug-total">

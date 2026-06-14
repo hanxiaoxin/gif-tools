@@ -13,33 +13,25 @@ export interface GifLoadStatsView {
   totalMs: number
 }
 
+const STAT_LINES = [
+  { key: 'networkTimeMs' as const, label: 'network' },
+  { key: 'queueWaitMs' as const, label: 'queue' },
+  { key: 'decodeTimeMs' as const, label: 'decode' },
+]
+
 export function getGifLoadStatsView(stats: GifLoadStats): GifLoadStatsView {
-  if (stats.fromCache) {
-    return {
-      mode: 'cache',
-      lines: [
-        { label: 'wait fetch', valueMs: 0 },
-        { label: 'wait decode', valueMs: 0 },
-      ],
-      totalMs: stats.totalMs,
-    }
-  }
-  if (stats.fromPending) {
-    return {
-      mode: 'pending',
-      lines: [
-        { label: 'wait fetch', valueMs: stats.pendingWaitFetchMs },
-        { label: 'wait decode', valueMs: stats.pendingWaitDecodeMs },
-      ],
-      totalMs: stats.totalMs,
-    }
-  }
+  const mode: GifLoadStatsMode = stats.fromCache
+    ? 'cache'
+    : stats.fromPending
+      ? 'pending'
+      : 'fresh'
+
   return {
-    mode: 'fresh',
-    lines: [
-      { label: 'fetch', valueMs: stats.fetchTimeMs },
-      { label: 'decode', valueMs: stats.decodeTimeMs },
-    ],
+    mode,
+    lines: STAT_LINES.map(({ key, label }) => ({
+      label,
+      valueMs: stats[key],
+    })),
     totalMs: stats.totalMs,
   }
 }
@@ -69,11 +61,4 @@ export function formatGifLoadStatsCompact(stats: GifLoadStats): string {
   const tag = MODE_SHORT[view.mode]
   if (view.mode === 'cache') return `${tag} · 0`
   return `${tag} · ${formatLoadTimeMs(stats.totalMs)}`
-}
-
-export function getGifLoadStatsLineLabel(line: GifLoadStatsLine, mode: GifLoadStatsMode): string {
-  if (mode === 'fresh') {
-    return line.label === 'fetch' ? 'f' : 'd'
-  }
-  return line.label === 'wait fetch' ? 'wf' : 'wd'
 }

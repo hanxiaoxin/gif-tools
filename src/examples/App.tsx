@@ -1,10 +1,19 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { GifPlayer, clearGifResourceCache, type GifLoadStats, type GifPlayerRef } from '../index'
+import { DEFAULT_WORKER_CONCURRENCY } from '../utils/gifWorkerPool'
 import './App.css'
 
 const GIF_SRCS = [
   'https://static.hanlinbo.cn/gif/onecat1.gif',
   'https://static.hanlinbo.cn/gif/onecat2.gif',
+  'https://static.hanlinbo.cn/gif/onecat3.gif',
+  'https://static.hanlinbo.cn/gif/onecat4.gif',
+  'https://static.hanlinbo.cn/gif/onecat5.gif',
+  'https://static.hanlinbo.cn/gif/onecat6.gif',
+  'https://static.hanlinbo.cn/gif/neir.gif',
+  'https://static.hanlinbo.cn/gif/Pikachu.gif',
+  'https://static.hanlinbo.cn/gif/Chinese%20Valentine%27s%20Day.gif',
+
 ]
 const BAD_SRC = 'https://static.hanlinbo.cn/gif/not-exist.gif'
 const CACHE_DEMO_SRC = GIF_SRCS[0]
@@ -45,12 +54,171 @@ const GRID_DEMOS: {
   { title: 'width 字符串', noWrapper: true, props: { showControls: true, debug: true } },
 ]
 
+type MultiLoadStats = {
+  loaded: number
+  sumMs: number
+  startedAt: number | null
+  finishedAt: number | null
+}
+
+const EMPTY_MULTI_STATS: MultiLoadStats = {
+  loaded: 0,
+  sumMs: 0,
+  startedAt: null,
+  finishedAt: null,
+}
+
+function createBatchStats(): MultiLoadStats {
+  return { loaded: 0, sumMs: 0, startedAt: performance.now(), finishedAt: null }
+}
+
+function gifFileName(src: string) {
+  try {
+    return decodeURIComponent(new URL(src).pathname.split('/').pop() || src)
+  } catch {
+    return src
+  }
+}
+
+function updateMultiStats(
+  setter: Dispatch<SetStateAction<MultiLoadStats>>,
+  stats: GifLoadStats,
+  total: number,
+) {
+  setter((prev) => {
+    const loaded = prev.loaded + 1
+    return {
+      ...prev,
+      loaded,
+      sumMs: prev.sumMs + stats.totalMs,
+      finishedAt: loaded >= total ? performance.now() : prev.finishedAt,
+    }
+  })
+}
+
+function MultiStatsBar({ stats, total }: { stats: MultiLoadStats; total: number }) {
+  const wallMs =
+    stats.startedAt !== null && stats.finishedAt !== null
+      ? stats.finishedAt - stats.startedAt
+      : null
+
+  return (
+    <div className="demo-multi-stats">
+      <span>
+        已加载 {stats.loaded}/{total}
+      </span>
+      {wallMs !== null && <span>总耗时 {wallMs.toFixed(1)}ms</span>}
+      {stats.loaded > 0 && (
+        <span>平均 {(stats.sumMs / stats.loaded).toFixed(1)}ms</span>
+      )}
+    </div>
+  )
+}
+
+function MultiDemoPanel({
+  title,
+  tag,
+  useWorker,
+  workerConcurrency,
+  show,
+  onToggleShow,
+  renderKey,
+  onReload,
+  stats,
+  onLoaded,
+}: {
+  title: string
+  tag: string
+  useWorker?: boolean
+  workerConcurrency?: number
+  show: boolean
+  onToggleShow: () => void
+  renderKey: number
+  onReload: () => void
+  stats: MultiLoadStats
+  onLoaded: (stats: GifLoadStats) => void
+}) {
+  return (
+    <div className="demo-multi-panel">
+      <div className="demo-multi-panel__head">
+        <h3 className="demo-multi-panel__title">{title}</h3>
+        <code className="demo-multi-panel__tag">{tag}</code>
+      </div>
+
+      <div className="demo-actions">
+        <span className="demo-actions__label">操作</span>
+        <div className="demo-actions__buttons">
+          <button
+            type="button"
+            className={show ? 'demo-actions__btn--accent' : undefined}
+            onClick={onToggleShow}
+          >
+            {show ? '卸载全部' : '挂载全部'}
+          </button>
+          <button type="button" disabled={!show} onClick={onReload}>
+            重新加载
+          </button>
+        </div>
+      </div>
+
+      {show ? (
+        <div className="demo-multi-grid" key={renderKey}>
+          {GIF_SRCS.map((src, i) => (
+            <article
+              key={`${useWorker ? 'worker' : 'main'}-${renderKey}-${i}`}
+              className="demo-multi-item"
+            >
+              <div className="demo-multi-item__head">
+                <span
+                  className={
+                    useWorker
+                      ? 'demo-multi-item__index demo-multi-item__index--worker'
+                      : 'demo-multi-item__index'
+                  }
+                >
+                  {i + 1}
+                </span>
+                <code className="demo-multi-item__label">{gifFileName(src)}</code>
+              </div>
+              <div className="demo-player-sm">
+                <GifPlayer
+                  src={src}
+                  width="100%"
+                  autoPlay
+                  showControls
+                  debug
+                  useWorker={useWorker}
+                  workerConcurrency={workerConcurrency}
+                  onLoaded={onLoaded}
+                />
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="demo-cache-placeholder demo-multi-panel__placeholder">
+          <p>点击「挂载全部」开始测试</p>
+        </div>
+      )}
+
+      <MultiStatsBar stats={stats} total={GIF_SRCS.length} />
+    </div>
+  )
+}
+
 export default function App() {
   const playerRef = useRef<GifPlayerRef>(null)
   const [events, setEvents] = useState<string[]>([])
   const [cacheEvents, setCacheEvents] = useState<string[]>([])
   const [showCachePlayer, setShowCachePlayer] = useState(false)
   const [useBadSrc, setUseBadSrc] = useState(false)
+  const [showMultiMain, setShowMultiMain] = useState(false)
+  const [showMultiWorker, setShowMultiWorker] = useState(false)
+  const [multiRenderKeyMain, setMultiRenderKeyMain] = useState(0)
+  const [multiRenderKeyWorker, setMultiRenderKeyWorker] = useState(0)
+  const [multiStatsMain, setMultiStatsMain] = useState<MultiLoadStats>(EMPTY_MULTI_STATS)
+  const [multiStatsWorker, setMultiStatsWorker] = useState<MultiLoadStats>(EMPTY_MULTI_STATS)
+  const [workerConcurrency, setWorkerConcurrency] = useState(DEFAULT_WORKER_CONCURRENCY)
 
   const log = (msg: string) => {
     setEvents((prev) =>
@@ -181,7 +349,7 @@ export default function App() {
             <div>
               <h2 className="demo-card__title">缓存演示</h2>
               <p className="demo-card__desc">
-                播放器 A 预加载相同 src；挂载 B 后应命中 cache。fresh 显示 fetch + decode，pending 显示 wait 阶段。
+                播放器 A 预加载相同 src；挂载 B 后应命中 cache。fresh 显示 network + queue + decode，pending 的 queue 为等待进行中的加载。
               </p>
             </div>
           </div>
@@ -288,6 +456,84 @@ export default function App() {
         <section className="demo-card">
           <div className="demo-card__head">
             <span className="demo-card__index">04</span>
+            <div>
+              <h2 className="demo-card__title">多实例并发</h2>
+              <p className="demo-card__desc">
+                分别测试 {GIF_SRCS.length} 个 GifPlayer 在主线程 decode 与 Worker decode 下的加载耗时。
+              </p>
+            </div>
+          </div>
+
+          <div className="demo-actions">
+            <span className="demo-actions__label">Worker 池</span>
+            <label className="demo-actions__field">
+              并发数
+              <input
+                type="number"
+                className="demo-actions__input"
+                min={1}
+                max={16}
+                value={workerConcurrency}
+                disabled={showMultiWorker}
+                onChange={(e) => {
+                  const next = Math.min(16, Math.max(1, Number(e.target.value) || 1))
+                  setWorkerConcurrency(next)
+                }}
+              />
+            </label>
+            {showMultiWorker && (
+              <span className="demo-actions__hint">卸载后可调整并发数</span>
+            )}
+          </div>
+
+          <div className="demo-multi-stack">
+            <MultiDemoPanel
+              title="主线程 decode"
+              tag="useWorker=false"
+              show={showMultiMain}
+              onToggleShow={() => {
+                setShowMultiMain((v) => {
+                  setMultiStatsMain(v ? EMPTY_MULTI_STATS : createBatchStats())
+                  return !v
+                })
+              }}
+              renderKey={multiRenderKeyMain}
+              onReload={() => {
+                clearGifResourceCache()
+                setMultiStatsMain(createBatchStats())
+                setMultiRenderKeyMain((k) => k + 1)
+              }}
+              stats={multiStatsMain}
+              onLoaded={(stats) => updateMultiStats(setMultiStatsMain, stats, GIF_SRCS.length)}
+            />
+
+            <MultiDemoPanel
+              title="Worker decode"
+              tag="useWorker=true"
+              useWorker
+              workerConcurrency={workerConcurrency}
+              show={showMultiWorker}
+              onToggleShow={() => {
+                setShowMultiWorker((v) => {
+                  setMultiStatsWorker(v ? EMPTY_MULTI_STATS : createBatchStats())
+                  return !v
+                })
+              }}
+              renderKey={multiRenderKeyWorker}
+              onReload={() => {
+                clearGifResourceCache()
+                setMultiStatsWorker(createBatchStats())
+                setMultiRenderKeyWorker((k) => k + 1)
+              }}
+              stats={multiStatsWorker}
+              onLoaded={(stats) => updateMultiStats(setMultiStatsWorker, stats, GIF_SRCS.length)}
+            />
+          </div>
+        </section>
+
+        <section className="demo-card">
+          <div className="demo-card__head">
+            <span className="demo-card__index">05</span>
             <div>
               <h2 className="demo-card__title">事件日志</h2>
               <p className="demo-card__desc">完整配置区块触发的生命周期与 Ref 回调。</p>

@@ -33,6 +33,8 @@ export interface GifPlayerProps {
   autoPlay?: boolean
   showControls?: boolean
   debug?: boolean
+  useWorker?: boolean
+  workerConcurrency?: number
   loopCount?: number
   onPlay?: () => void
   onPause?: () => void
@@ -52,6 +54,8 @@ export const GifPlayer: GifPlayerComponent = forwardRef<GifPlayerRef, GifPlayerP
       autoPlay = true,
       showControls = false,
       debug = false,
+      useWorker = false,
+      workerConcurrency,
       loopCount,
       className,
       style,
@@ -129,6 +133,8 @@ export const GifPlayer: GifPlayerComponent = forwardRef<GifPlayerRef, GifPlayerP
 
       createGifController(canvas, src, {
         skipPending,
+        useWorker,
+        workerConcurrency,
         loopCount,
         onPlay: () => {
           if (loadId === loadIdRef.current) setPlaying(true)
@@ -151,12 +157,12 @@ export const GifPlayer: GifPlayerComponent = forwardRef<GifPlayerRef, GifPlayerP
             return
           }
 
-          acquireGifResource(src)
+          acquireGifResource(src, useWorker)
           controllerRef.current = controller
           const baseDestroy = controller.destroy.bind(controller)
           controller.destroy = (options) => {
             baseDestroy(options)
-            releaseGifResource(src)
+            releaseGifResource(src, useWorker)
           }
 
           setReady(true)
@@ -181,7 +187,7 @@ export const GifPlayer: GifPlayerComponent = forwardRef<GifPlayerRef, GifPlayerP
           controllerRef.current = null
         }
       }
-    }, [src, loopCount, autoPlay])
+    }, [src, loopCount, autoPlay, useWorker, workerConcurrency])
 
     useImperativeHandle(
       ref,

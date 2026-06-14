@@ -7,15 +7,13 @@ export interface LoadedGif {
 }
 
 export interface GifLoadStats {
-  /** 本次实际 fetch 耗时，仅 fresh 发起方有值 */
-  fetchTimeMs: number
-  /** 本次实际 decode 耗时，仅 fresh 发起方有值 */
+  /** 浏览器侧实际网络/缓存读取耗时（Resource Timing） */
+  networkTimeMs: number
+  /** Worker 池排队，或 pending 跟随方等待进行中的加载 */
+  queueWaitMs: number
+  /** 本次实际 decode 耗时 */
   decodeTimeMs: number
-  /** 等待进行中的 fetch 阶段，仅 pending */
-  pendingWaitFetchMs: number
-  /** 等待进行中的 decode 阶段，仅 pending */
-  pendingWaitDecodeMs: number
-  /** 总加载耗时：cache 为 0，pending 为 wait 之和，fresh 为 fetch + decode */
+  /** 墙钟总耗时（含主线程争用等未分项统计的等待） */
   totalMs: number
   fromCache: boolean
   fromPending: boolean
@@ -28,6 +26,9 @@ export interface CreateGifOptions {
   onPause?: () => void
   onLoaded?: (stats: GifLoadStats) => void
   skipPending?: boolean
+  useWorker?: boolean
+  /** Worker 池并发数，仅 useWorker=true 时生效，默认 min(hardwareConcurrency, 4) */
+  workerConcurrency?: number
 }
 
 export interface GifController {

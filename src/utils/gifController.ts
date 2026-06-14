@@ -152,8 +152,8 @@ export async function createGifController(
   src: string,
   options: CreateGifOptions = {},
 ): Promise<{ controller: GifController; stats: GifLoadStats }> {
-  const { skipPending, onLoaded, ...controllerOptions } = options
-  const { gif, stats } = await loadGifResource(src, { skipPending })
+  const { skipPending, useWorker, workerConcurrency, onLoaded, ...controllerOptions } = options
+  const { gif, stats } = await loadGifResource(src, { skipPending, useWorker, workerConcurrency })
   onLoaded?.(stats)
   const controller = initGifController(
     canvas,

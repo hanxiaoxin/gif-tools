@@ -8,5 +8,5 @@
     "outDir": "dist",
     "allowImportingTsExtensions": false
   },
-  "include": ["src/index.ts", "src/components", "src/utils"]
+  "include": ["src/index.ts", "src/components", "src/utils", "src/workers"]
 }
