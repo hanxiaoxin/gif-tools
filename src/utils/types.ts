@@ -15,6 +15,8 @@ export interface GifLoadStats {
   pendingWaitFetchMs: number
   /** 等待进行中的 decode 阶段，仅 pending */
   pendingWaitDecodeMs: number
+  /** 总加载耗时：cache 为 0，pending 为 wait 之和，fresh 为 fetch + decode */
+  totalMs: number
   fromCache: boolean
   fromPending: boolean
 }

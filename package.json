@@ -1,6 +1,6 @@
 {
   "name": "@libshub/gif-tools",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "",
   "module": "./dist/gif-tools.es.js",
   "types": "./dist/index.d.ts",

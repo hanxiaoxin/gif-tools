@@ -80,11 +80,7 @@ ref.current?.isPlaying() // 是否正在播放
 
 ```tsx
 import { useRef } from 'react'
-import {
-  GifPlayer,
-  formatGifLoadStats,
-  type GifPlayerRef,
-} from '@libshub/gif-tools'
+import { GifPlayer, type GifPlayerRef } from '@libshub/gif-tools'
 import '@libshub/gif-tools/style.css'
 
 export default function Demo() {
@@ -105,7 +101,7 @@ export default function Demo() {
         showControls
         loopCount={2}
         debug
-        onLoaded={(stats) => console.log(formatGifLoadStats(stats))}
+        onLoaded={(stats) => console.log(`loaded in ${stats.totalMs.toFixed(1)}ms`)}
         onPlay={() => console.log('play')}
         onPause={() => console.log('pause')}
         onEnd={() => console.log('end')}
@@ -129,22 +125,28 @@ clearGifResourceCache()
 
 `onLoaded` 回调中的 `GifLoadStats` 可区分三种加载模式：
 
-- **fresh**：首次加载，包含 `fetchTimeMs` 与 `decodeTimeMs`
-- **pending**：复用进行中的请求，包含 `pendingWaitFetchMs` 与 `pendingWaitDecodeMs`
-- **cache**：命中缓存，耗时均为 0
+| 模式 | 判断 | 有效字段 | `totalMs` |
+|------|------|----------|-----------|
+| **fresh** | `!fromCache && !fromPending` | `fetchTimeMs`、`decodeTimeMs` | `fetchTimeMs + decodeTimeMs` |
+| **pending** | `fromPending` | `pendingWaitFetchMs`、`pendingWaitDecodeMs` | 两者之和 |
+| **cache** | `fromCache` | 各阶段均为 0 | `0` |
 
 ```tsx
-import { formatGifLoadStats, getGifLoadStatsView } from '@libshub/gif-tools'
+import type { GifLoadStats } from '@libshub/gif-tools'
 
-onLoaded={(stats) => {
-  console.log(formatGifLoadStats(stats))
-  // fresh
-  // fetch 120.5ms
-  // decode 45.2ms
-  // total 165.7ms
-
-  const view = getGifLoadStatsView(stats)
-  console.log(view.mode) // 'fresh' | 'pending' | 'cache'
+onLoaded={(stats: GifLoadStats) => {
+  if (stats.fromCache) {
+    console.log('cache hit')
+    return
+  }
+  if (stats.fromPending) {
+    console.log(
+      `pending: fetch ${stats.pendingWaitFetchMs}ms, decode ${stats.pendingWaitDecodeMs}ms`,
+    )
+    return
+  }
+  console.log(`fresh: fetch ${stats.fetchTimeMs}ms, decode ${stats.decodeTimeMs}ms`)
+  console.log(`total ${stats.totalMs}ms`)
 }}
 ```
 
@@ -181,13 +183,8 @@ controller.destroy()
 
 - `GifPlayerProps`、`GifPlayerRef`、`GifPlayerComponent`
 - `GifLoadStats`、`GifController`、`CreateGifOptions`
-- `GifLoadStatsView`、`GifLoadStatsLine`、`GifLoadStatsMode`
 
 **工具函数**
 
 - `createGifController` — 在 Canvas 上创建 GIF 控制器
 - `clearGifResourceCache` — 清空 GIF 资源缓存
-- `formatGifLoadStats` — 格式化加载统计（多行）
-- `formatLoadTimeMs` — 格式化毫秒数
-- `getGifLoadStatsView` — 获取结构化加载统计视图
-- `getTotalLoadTimeMs` — 获取总加载耗时

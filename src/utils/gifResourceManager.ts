@@ -55,6 +55,7 @@ function cacheHitStats(): GifLoadStats {
     decodeTimeMs: 0,
     pendingWaitFetchMs: 0,
     pendingWaitDecodeMs: 0,
+    totalMs: 0,
     fromCache: true,
     fromPending: false,
   }
@@ -66,6 +67,7 @@ function freshStats(fetchTimeMs: number, decodeTimeMs: number): GifLoadStats {
     decodeTimeMs,
     pendingWaitFetchMs: 0,
     pendingWaitDecodeMs: 0,
+    totalMs: fetchTimeMs + decodeTimeMs,
     fromCache: false,
     fromPending: false,
   }
@@ -135,6 +137,7 @@ export async function loadGifResource(
         decodeTimeMs: 0,
         pendingWaitFetchMs,
         pendingWaitDecodeMs,
+        totalMs: pendingWaitFetchMs + pendingWaitDecodeMs,
         fromCache: false,
         fromPending: true,
       },

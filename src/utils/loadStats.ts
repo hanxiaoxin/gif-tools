@@ -1,11 +1,5 @@
 import type { GifLoadStats } from './types'
 
-export function getTotalLoadTimeMs(stats: GifLoadStats): number {
-  if (stats.fromCache) return 0
-  if (stats.fromPending) return stats.pendingWaitFetchMs + stats.pendingWaitDecodeMs
-  return stats.fetchTimeMs + stats.decodeTimeMs
-}
-
 export type GifLoadStatsMode = 'fresh' | 'pending' | 'cache'
 
 export interface GifLoadStatsLine {
@@ -27,7 +21,7 @@ export function getGifLoadStatsView(stats: GifLoadStats): GifLoadStatsView {
         { label: 'wait fetch', valueMs: 0 },
         { label: 'wait decode', valueMs: 0 },
       ],
-      totalMs: 0,
+      totalMs: stats.totalMs,
     }
   }
   if (stats.fromPending) {
@@ -37,7 +31,7 @@ export function getGifLoadStatsView(stats: GifLoadStats): GifLoadStatsView {
         { label: 'wait fetch', valueMs: stats.pendingWaitFetchMs },
         { label: 'wait decode', valueMs: stats.pendingWaitDecodeMs },
       ],
-      totalMs: stats.pendingWaitFetchMs + stats.pendingWaitDecodeMs,
+      totalMs: stats.totalMs,
     }
   }
   return {
@@ -46,14 +40,8 @@ export function getGifLoadStatsView(stats: GifLoadStats): GifLoadStatsView {
       { label: 'fetch', valueMs: stats.fetchTimeMs },
       { label: 'decode', valueMs: stats.decodeTimeMs },
     ],
-    totalMs: stats.fetchTimeMs + stats.decodeTimeMs,
+    totalMs: stats.totalMs,
   }
-}
-
-export function formatGifLoadStats(stats: GifLoadStats): string {
-  const view = getGifLoadStatsView(stats)
-  const rows = view.lines.map((l) => `${l.label} ${l.valueMs.toFixed(1)}ms`).join('\n')
-  return `${view.mode}\n${rows}\ntotal ${view.totalMs.toFixed(1)}ms`
 }
 
 export function formatLoadTimeMs(ms: number): string {
@@ -80,7 +68,7 @@ export function formatGifLoadStatsCompact(stats: GifLoadStats): string {
   const view = getGifLoadStatsView(stats)
   const tag = MODE_SHORT[view.mode]
   if (view.mode === 'cache') return `${tag} · 0`
-  return `${tag} · ${formatLoadTimeMs(view.totalMs)}`
+  return `${tag} · ${formatLoadTimeMs(stats.totalMs)}`
 }
 
 export function getGifLoadStatsLineLabel(line: GifLoadStatsLine, mode: GifLoadStatsMode): string {

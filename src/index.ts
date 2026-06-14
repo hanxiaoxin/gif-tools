@@ -5,5 +5,5 @@ export type {
   GifPlayerRef,
 } from './components/GifPlayer'
 
-export { createGifController, clearGifResourceCache, formatGifLoadStats, formatLoadTimeMs, getGifLoadStatsView, getTotalLoadTimeMs } from './utils'
-export type { CreateGifOptions, GifController, GifLoadStats, GifLoadStatsLine, GifLoadStatsMode, GifLoadStatsView } from './utils'
+export { createGifController, clearGifResourceCache } from './utils'
+export type { CreateGifOptions, GifController, GifLoadStats } from './utils'

@@ -1,5 +1,3 @@
 export { createGifController } from './gifController'
 export { acquireGifResource, clearGifResourceCache, releaseGifResource } from './gifResourceManager'
-export { formatGifLoadStats, formatGifLoadStatsCompact, formatLoadTimeMs, getDebugDensity, getGifLoadStatsView, getTotalLoadTimeMs } from './loadStats'
-export type { GifLoadStatsLine, GifLoadStatsMode, GifLoadStatsView } from './loadStats'
 export type { CreateGifOptions, GifController, GifLoadStats } from './types'
